@@ -28,13 +28,13 @@ templates = Jinja2Templates(directory="templates")
 @app.on_event("startup")
 async def startup_event():
     init_db()
-    # Всегда удаляем старые данные и заполняем новыми
+    # Заполняем тестовыми данными если БД пустая
     try:
         from fill_data import fill_test_data
         db = SessionLocal()
         try:
-            fill_test_data(db)
-            print("База данных очищена и заполнена новыми данными!")
+            if db.query(User).count() == 0:
+                fill_test_data(db)
         except Exception as e:
             print(f"Ошибка при заполнении данных: {e}")
         finally:

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card text-center">
+            <div class="card-body py-5">
+                <h1 class="display-4 mb-4">
+                    <i class="bi bi-mortarboard text-primary"></i> MAX UNIVER
+                </h1>
+                <p class="lead mb-4">Цифровая платформа для студентов, преподавателей и деканата</p>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <a href="/login" class="btn btn-primary btn-lg me-md-2">
+                        <i class="bi bi-box-arrow-in-right"></i> Войти
+                    </a>
+                    <a href="/register" class="btn btn-outline-primary btn-lg">
+                        <i class="bi bi-person-plus"></i> Регистрация
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-calendar-check display-4 text-primary mb-3"></i>
+                        <h5>Умное расписание</h5>
+                        <p class="text-muted">Просмотр расписания пар для всех пользователей</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-building display-4 text-success mb-3"></i>
+                        <h5>Управление общежитием</h5>
+                        <p class="text-muted">Пропуски, ремонт, оплата проживания</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-file-text display-4 text-info mb-3"></i>
+                        <h5>Цифровой деканат</h5>
+                        <p class="text-muted">Оформление справок и заявлений онлайн</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-newspaper display-4 text-warning mb-3"></i>
+                        <h5>Информационный центр</h5>
+                        <p class="text-muted">Новости и уведомления в одном месте</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-person-badge display-4 text-danger mb-3"></i>
+                        <h5>Ассистент преподавателя</h5>
+                        <p class="text-muted">Управление группами и посещаемостью</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

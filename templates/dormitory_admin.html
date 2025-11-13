@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-building"></i> Управление заявками общежития</h4>
+            </div>
+            <div class="card-body">
+                {% if requests %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Пользователь</th>
+                                <th>Тип</th>
+                                <th>Описание</th>
+                                <th>Статус</th>
+                                <th>Дата</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in requests %}
+                            <tr>
+                                <td>{{ req.user.full_name or req.user.username }}</td>
+                                <td>
+                                    {% if req.request_type == "pass" %}
+                                        <span class="badge bg-info">Пропуск</span>
+                                    {% elif req.request_type == "repair" %}
+                                        <span class="badge bg-warning">Ремонт</span>
+                                    {% elif req.request_type == "payment" %}
+                                        <span class="badge bg-success">Оплата</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ req.description or "-" }}</td>
+                                <td>
+                                    {% if req.status == "pending" %}
+                                        <span class="badge bg-warning">Ожидает</span>
+                                    {% elif req.status == "approved" %}
+                                        <span class="badge bg-success">Одобрено</span>
+                                    {% elif req.status == "rejected" %}
+                                        <span class="badge bg-danger">Отклонено</span>
+                                    {% elif req.status == "completed" %}
+                                        <span class="badge bg-primary">Выполнено</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ req.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                                <td>
+                                    <form method="POST" action="/dormitory/update/{{ req.id }}" style="display:inline;">
+                                        <select name="status" class="form-select form-select-sm d-inline-block" style="width: auto;" onchange="this.form.submit()">
+                                            <option value="pending" {% if req.status == "pending" %}selected{% endif %}>Ожидает</option>
+                                            <option value="approved" {% if req.status == "approved" %}selected{% endif %}>Одобрено</option>
+                                            <option value="rejected" {% if req.status == "rejected" %}selected{% endif %}>Отклонено</option>
+                                            <option value="completed" {% if req.status == "completed" %}selected{% endif %}>Выполнено</option>
+                                        </select>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center text-muted">Нет заявок</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

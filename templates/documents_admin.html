@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-file-text"></i> Управление документами</h4>
+            </div>
+            <div class="card-body">
+                {% if documents %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Пользователь</th>
+                                <th>Тип</th>
+                                <th>Описание</th>
+                                <th>Статус</th>
+                                <th>Дата</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in documents %}
+                            <tr>
+                                <td>{{ doc.user.full_name or doc.user.username }}</td>
+                                <td>
+                                    {% if doc.document_type == "certificate" %}
+                                        <span class="badge bg-info">Справка</span>
+                                    {% elif doc.document_type == "academic_leave" %}
+                                        <span class="badge bg-warning">Академ отпуск</span>
+                                    {% elif doc.document_type == "transfer" %}
+                                        <span class="badge bg-success">Перевод</span>
+                                    {% elif doc.document_type == "vacation" %}
+                                        <span class="badge bg-primary">Отпуск</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ doc.description or "-" }}</td>
+                                <td>
+                                    {% if doc.status == "pending" %}
+                                        <span class="badge bg-warning">Ожидает</span>
+                                    {% elif doc.status == "approved" %}
+                                        <span class="badge bg-success">Одобрено</span>
+                                    {% elif doc.status == "rejected" %}
+                                        <span class="badge bg-danger">Отклонено</span>
+                                    {% elif doc.status == "issued" %}
+                                        <span class="badge bg-primary">Выдано</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ doc.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                                <td>
+                                    <form method="POST" action="/documents/update/{{ doc.id }}" style="display:inline;">
+                                        <select name="status" class="form-select form-select-sm d-inline-block" style="width: auto;" onchange="this.form.submit()">
+                                            <option value="pending" {% if doc.status == "pending" %}selected{% endif %}>Ожидает</option>
+                                            <option value="approved" {% if doc.status == "approved" %}selected{% endif %}>Одобрено</option>
+                                            <option value="rejected" {% if doc.status == "rejected" %}selected{% endif %}>Отклонено</option>
+                                            <option value="issued" {% if doc.status == "issued" %}selected{% endif %}>Выдано</option>
+                                        </select>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center text-muted">Нет документов</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

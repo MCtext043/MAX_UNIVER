@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-person-badge"></i> Мои группы</h4>
+                <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#groupModal">
+                    <i class="bi bi-plus-circle"></i> Создать группу
+                </button>
+            </div>
+            <div class="card-body">
+                {% if groups %}
+                <div class="list-group">
+                    {% for group in groups %}
+                    <a href="/teacher/group/{{ group.id }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">{{ group.name }}</h5>
+                            <small>{{ group.created_at.strftime('%d.%m.%Y') }}</small>
+                        </div>
+                        <p class="mb-1">Студентов: {{ group.students|length }}</p>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-center text-muted">У вас пока нет групп</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal для создания группы -->
+<div class="modal fade" id="groupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Создать группу</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="/teacher/group/create">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Название группы</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Создать</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

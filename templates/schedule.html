@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-calendar-check"></i> Расписание пар</h4>
+                {% if can_edit %}
+                <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addScheduleModal">
+                    <i class="bi bi-plus-circle"></i> Добавить
+                </button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% for day, schedules in schedules_by_day.items() %}
+                {% if schedules %}
+                <div class="mb-4">
+                    <h5 class="text-primary mb-3">
+                        <i class="bi bi-calendar-day"></i> 
+                        {% if day == "Monday" %}Понедельник
+                        {% elif day == "Tuesday" %}Вторник
+                        {% elif day == "Wednesday" %}Среда
+                        {% elif day == "Thursday" %}Четверг
+                        {% elif day == "Friday" %}Пятница
+                        {% elif day == "Saturday" %}Суббота
+                        {% elif day == "Sunday" %}Воскресенье
+                        {% else %}{{ day }}{% endif %}
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Время</th>
+                                    <th>Предмет</th>
+                                    <th>Преподаватель</th>
+                                    <th>Аудитория</th>
+                                    {% if can_edit %}<th>Действия</th>{% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for schedule in schedules %}
+                                <tr>
+                                    <td>{{ schedule.time_start }} - {{ schedule.time_end }}</td>
+                                    <td><strong>{{ schedule.subject }}</strong></td>
+                                    <td>{{ schedule.teacher_name or "-" }}</td>
+                                    <td>{{ schedule.room or "-" }}</td>
+                                    {% if can_edit %}
+                                    <td>
+                                        <form method="POST" action="/schedule/delete/{{ schedule.id }}" style="display:inline;">
+                                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Удалить?')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+                
+                {% if not has_schedules %}
+                <p class="text-center text-muted">Расписание пока пусто</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if can_edit %}
+<!-- Modal для добавления расписания -->
+<div class="modal fade" id="addScheduleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Добавить пару</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="/schedule/add">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Предмет</label>
+                        <input type="text" class="form-control" name="subject" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">День недели</label>
+                        <select class="form-select" name="day_of_week" required>
+                            <option value="Monday">Понедельник</option>
+                            <option value="Tuesday">Вторник</option>
+                            <option value="Wednesday">Среда</option>
+                            <option value="Thursday">Четверг</option>
+                            <option value="Friday">Пятница</option>
+                            <option value="Saturday">Суббота</option>
+                            <option value="Sunday">Воскресенье</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Начало (HH:MM)</label>
+                            <input type="text" class="form-control" name="time_start" placeholder="09:00" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Конец (HH:MM)</label>
+                            <input type="text" class="form-control" name="time_end" placeholder="10:30" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Аудитория</label>
+                        <input type="text" class="form-control" name="room">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Преподаватель</label>
+                        <input type="text" class="form-control" name="teacher_name">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

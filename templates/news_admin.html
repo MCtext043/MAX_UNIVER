@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-newspaper"></i> Модерация новостей</h4>
+            </div>
+            <div class="card-body">
+                {% if news %}
+                {% for item in news %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ item.title }}</h5>
+                        <p class="card-text">{{ item.description }}</p>
+                        {% if item.photo_path %}
+                        <img src="{{ item.photo_path }}" class="img-fluid rounded mb-2" alt="News photo" style="max-height: 300px; width: 100%; object-fit: cover;">
+                        {% endif %}
+                        <p class="text-muted small">
+                            <i class="bi bi-person"></i> {{ item.author.full_name or item.author.username }}
+                            <i class="bi bi-calendar ms-3"></i> {{ item.created_at.strftime('%d.%m.%Y %H:%M') }}
+                        </p>
+                        <div class="mt-3">
+                            <form method="POST" action="/news/update/{{ item.id }}" style="display:inline;">
+                                <input type="hidden" name="status" value="approved">
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <i class="bi bi-check-circle"></i> Одобрить
+                                </button>
+                            </form>
+                            <form method="POST" action="/news/update/{{ item.id }}" style="display:inline;">
+                                <input type="hidden" name="status" value="rejected">
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    <i class="bi bi-x-circle"></i> Отклонить
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="text-center text-muted">Нет новостей на модерации</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

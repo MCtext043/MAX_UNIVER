@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-person-plus"></i> Регистрация</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/register">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Имя пользователя</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="full_name" class="form-label">ФИО</label>
+                        <input type="text" class="form-control" id="full_name" name="full_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Пароль</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="role" class="form-label">Роль</label>
+                        <select class="form-select" id="role" name="role" required>
+                            <option value="">Выберите роль</option>
+                            <option value="student">Студент</option>
+                            <option value="teacher">Преподаватель</option>
+                            <option value="deanery">Деканат</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-person-plus"></i> Зарегистрироваться
+                    </button>
+                </form>
+                <hr>
+                <p class="text-center mb-0">
+                    Уже есть аккаунт? <a href="/login">Войти</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

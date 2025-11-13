@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-building"></i> Управление общежитием</h4>
+                <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#requestModal">
+                    <i class="bi bi-plus-circle"></i> Новая заявка
+                </button>
+            </div>
+            <div class="card-body">
+                {% if requests %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Тип</th>
+                                <th>Описание</th>
+                                <th>Статус</th>
+                                <th>Дата</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in requests %}
+                            <tr>
+                                <td>
+                                    {% if req.request_type == "pass" %}
+                                        <span class="badge bg-info">Пропуск</span>
+                                    {% elif req.request_type == "repair" %}
+                                        <span class="badge bg-warning">Ремонт</span>
+                                    {% elif req.request_type == "payment" %}
+                                        <span class="badge bg-success">Оплата</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ req.description or "-" }}</td>
+                                <td>
+                                    {% if req.status == "pending" %}
+                                        <span class="badge bg-warning">Ожидает</span>
+                                    {% elif req.status == "approved" %}
+                                        <span class="badge bg-success">Одобрено</span>
+                                    {% elif req.status == "rejected" %}
+                                        <span class="badge bg-danger">Отклонено</span>
+                                    {% elif req.status == "completed" %}
+                                        <span class="badge bg-primary">Выполнено</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ req.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center text-muted">У вас пока нет заявок</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal для создания заявки -->
+<div class="modal fade" id="requestModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Новая заявка</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="/dormitory/request">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Тип заявки</label>
+                        <select class="form-select" name="request_type" required>
+                            <option value="pass">Пропуск для гостя</option>
+                            <option value="repair">Заявка на ремонт</option>
+                            <option value="payment">Оплата проживания</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Описание</label>
+                        <textarea class="form-control" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Отправить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

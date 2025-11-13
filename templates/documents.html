@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-file-text"></i> Мои документы</h4>
+                <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#documentModal">
+                    <i class="bi bi-plus-circle"></i> Новый документ
+                </button>
+            </div>
+            <div class="card-body">
+                {% if documents %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Тип</th>
+                                <th>Описание</th>
+                                <th>Статус</th>
+                                <th>Дата</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in documents %}
+                            <tr>
+                                <td>
+                                    {% if doc.document_type == "certificate" %}
+                                        <span class="badge bg-info">Справка</span>
+                                    {% elif doc.document_type == "academic_leave" %}
+                                        <span class="badge bg-warning">Академ отпуск</span>
+                                    {% elif doc.document_type == "transfer" %}
+                                        <span class="badge bg-success">Перевод</span>
+                                    {% elif doc.document_type == "vacation" %}
+                                        <span class="badge bg-primary">Отпуск</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ doc.description or "-" }}</td>
+                                <td>
+                                    {% if doc.status == "pending" %}
+                                        <span class="badge bg-warning">Ожидает</span>
+                                    {% elif doc.status == "approved" %}
+                                        <span class="badge bg-success">Одобрено</span>
+                                    {% elif doc.status == "rejected" %}
+                                        <span class="badge bg-danger">Отклонено</span>
+                                    {% elif doc.status == "issued" %}
+                                        <span class="badge bg-primary">Выдано</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ doc.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center text-muted">У вас пока нет документов</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal для создания документа -->
+<div class="modal fade" id="documentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Новый документ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="/documents/create">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Тип документа</label>
+                        <select class="form-select" name="document_type" required>
+                            <option value="certificate">Справка</option>
+                            <option value="academic_leave">Заявление на академ отпуск</option>
+                            <option value="transfer">Заявление на перевод</option>
+                            <option value="vacation">Заявление на отпуск</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Описание</label>
+                        <textarea class="form-control" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Отправить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

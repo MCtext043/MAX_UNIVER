@@ -2,14 +2,16 @@ from fastapi import FastAPI, Depends, HTTPException, Request, Form, File, Upload
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.orm import Session
-from database import get_db, init_db
+from database import get_db, init_db, SessionLocal
 from models import *
 from auth import *
 from datetime import datetime, timedelta
 import os
 import shutil
 from typing import Optional
+import traceback
 
 app = FastAPI(title="MAX UNIVER")
 
@@ -26,6 +28,49 @@ templates = Jinja2Templates(directory="templates")
 @app.on_event("startup")
 async def startup_event():
     init_db()
+    # Всегда удаляем старые данные и заполняем новыми
+    try:
+        from fill_data import fill_test_data
+        db = SessionLocal()
+        try:
+            fill_test_data(db)
+            print("База данных очищена и заполнена новыми данными!")
+        except Exception as e:
+            print(f"Ошибка при заполнении данных: {e}")
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"Не удалось импортировать fill_data: {e}")
+
+# Глобальный обработчик ошибок
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    error_message = str(exc)
+    if isinstance(exc, ValueError):
+        error_message = f"Ошибка в данных: {error_message}"
+    elif isinstance(exc, HTTPException):
+        error_message = exc.detail
+    else:
+        error_message = "Произошла непредвиденная ошибка. Попробуйте позже."
+    
+    return templates.TemplateResponse("error.html", {
+        "request": request,
+        "error_message": error_message
+    }, status_code=500)
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return templates.TemplateResponse("error.html", {
+        "request": request,
+        "error_message": "Ошибка валидации данных. Проверьте правильность введенных данных."
+    }, status_code=400)
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return templates.TemplateResponse("error.html", {
+        "request": request,
+        "error_message": exc.detail
+    }, status_code=exc.status_code)
 
 # ========== АУТЕНТИФИКАЦИЯ ==========
 
@@ -39,6 +84,7 @@ async def register_page(request: Request):
 
 @app.post("/register")
 async def register(
+    request: Request,
     username: str = Form(...),
     email: str = Form(...),
     password: str = Form(...),
@@ -46,31 +92,46 @@ async def register(
     role: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    if role not in ["student", "teacher", "deanery"]:
-        raise HTTPException(status_code=400, detail="Invalid role")
-    
-    if get_user_by_username(db, username):
-        raise HTTPException(status_code=400, detail="Username already registered")
-    
-    if get_user_by_email(db, email):
-        raise HTTPException(status_code=400, detail="Email already registered")
-    
-    hashed_password = get_password_hash(password)
-    user = User(
-        username=username,
-        email=email,
-        hashed_password=hashed_password,
-        full_name=full_name,
-        role=role
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    
-    access_token = create_access_token(data={"sub": user.username})
-    response = RedirectResponse(url="/dashboard", status_code=303)
-    response.set_cookie(key="access_token", value=access_token, httponly=True)
-    return response
+    try:
+        if role not in ["student", "teacher", "deanery"]:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error_message": "Неверная роль"
+            }, status_code=400)
+        
+        if get_user_by_username(db, username):
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error_message": "Пользователь с таким именем уже существует"
+            }, status_code=400)
+        
+        if get_user_by_email(db, email):
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error_message": "Пользователь с таким email уже существует"
+            }, status_code=400)
+        
+        hashed_password = get_password_hash(password)
+        user = User(
+            username=username,
+            email=email,
+            hashed_password=hashed_password,
+            full_name=full_name,
+            role=role
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        
+        access_token = create_access_token(data={"sub": user.username})
+        response = RedirectResponse(url="/dashboard", status_code=303)
+        response.set_cookie(key="access_token", value=access_token, httponly=True)
+        return response
+    except Exception as e:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": f"Ошибка при регистрации: {str(e)}"
+        }, status_code=500)
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
@@ -78,18 +139,28 @@ async def login_page(request: Request):
 
 @app.post("/login")
 async def login(
+    request: Request,
     username: str = Form(...),
     password: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    user = authenticate_user(db, username, password)
-    if not user:
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
-    
-    access_token = create_access_token(data={"sub": user.username})
-    response = RedirectResponse(url="/dashboard", status_code=303)
-    response.set_cookie(key="access_token", value=access_token, httponly=True)
-    return response
+    try:
+        user = authenticate_user(db, username, password)
+        if not user:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error_message": "Неверное имя пользователя или пароль"
+            }, status_code=401)
+        
+        access_token = create_access_token(data={"sub": user.username})
+        response = RedirectResponse(url="/dashboard", status_code=303)
+        response.set_cookie(key="access_token", value=access_token, httponly=True)
+        return response
+    except Exception as e:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": f"Ошибка при входе: {str(e)}"
+        }, status_code=500)
 
 @app.get("/logout")
 async def logout():
@@ -126,28 +197,34 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
 
 @app.get("/schedule", response_class=HTMLResponse)
 async def schedule_page(request: Request, db: Session = Depends(get_db)):
-    user = get_current_user_from_cookie(request, db)
-    if not user:
-        return RedirectResponse(url="/login", status_code=303)
-    
-    schedules = db.query(Schedule).order_by(
-        Schedule.day_of_week, Schedule.time_start
-    ).all()
-    
-    days_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-    schedules_by_day = {}
-    for day in days_order:
-        schedules_by_day[day] = [s for s in schedules if s.day_of_week == day]
-    
-    has_schedules = any(schedules_by_day.values())
-    
-    return templates.TemplateResponse("schedule.html", {
-        "request": request,
-        "user": user,
-        "schedules_by_day": schedules_by_day,
-        "can_edit": user.role == "deanery",
-        "has_schedules": has_schedules
-    })
+    try:
+        user = get_current_user_from_cookie(request, db)
+        if not user:
+            return RedirectResponse(url="/login", status_code=303)
+        
+        schedules = db.query(Schedule).order_by(
+            Schedule.day_of_week, Schedule.time_start
+        ).all()
+        
+        days_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        schedules_by_day = {}
+        for day in days_order:
+            schedules_by_day[day] = [s for s in schedules if s.day_of_week == day]
+        
+        has_schedules = any(schedules_by_day.values())
+        
+        return templates.TemplateResponse("schedule.html", {
+            "request": request,
+            "user": user,
+            "schedules_by_day": schedules_by_day,
+            "can_edit": user.role == "deanery",
+            "has_schedules": has_schedules
+        })
+    except Exception as e:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": f"Ошибка при загрузке расписания: {str(e)}"
+        }, status_code=500)
 
 @app.post("/schedule/add")
 async def add_schedule(
@@ -160,22 +237,31 @@ async def add_schedule(
     teacher_name: str = Form(None),
     db: Session = Depends(get_db)
 ):
-    user = get_current_user_from_cookie(request, db)
-    if not user or user.role != "deanery":
-        raise HTTPException(status_code=403, detail="Only deanery can add schedules")
-    
-    schedule = Schedule(
-        subject=subject,
-        day_of_week=day_of_week,
-        time_start=time_start,
-        time_end=time_end,
-        room=room,
-        teacher_name=teacher_name,
-        created_by=user.id
-    )
-    db.add(schedule)
-    db.commit()
-    return RedirectResponse(url="/schedule", status_code=303)
+    try:
+        user = get_current_user_from_cookie(request, db)
+        if not user or user.role != "deanery":
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error_message": "Только деканат может добавлять расписание"
+            }, status_code=403)
+        
+        schedule = Schedule(
+            subject=subject,
+            day_of_week=day_of_week,
+            time_start=time_start,
+            time_end=time_end,
+            room=room,
+            teacher_name=teacher_name,
+            created_by=user.id
+        )
+        db.add(schedule)
+        db.commit()
+        return RedirectResponse(url="/schedule", status_code=303)
+    except Exception as e:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": f"Ошибка при добавлении расписания: {str(e)}"
+        }, status_code=500)
 
 @app.post("/schedule/delete/{schedule_id}")
 async def delete_schedule(
@@ -533,25 +619,52 @@ async def mark_attendance(
     notes: str = Form(None),
     db: Session = Depends(get_db)
 ):
-    user = get_current_user_from_cookie(request, db)
-    if not user or user.role != "teacher":
-        raise HTTPException(status_code=403, detail="Access denied")
-    
-    group = db.query(Group).filter(Group.id == group_id).first()
-    if not group or group.teacher_id != user.id:
-        raise HTTPException(status_code=404, detail="Group not found")
-    
-    attendance = AttendanceRecord(
-        group_id=group_id,
-        student_id=student_id,
-        date=datetime.fromisoformat(date),
-        present=present,
-        notes=notes
-    )
-    db.add(attendance)
-    db.commit()
-    
-    return RedirectResponse(url=f"/teacher/group/{group_id}", status_code=303)
+    try:
+        user = get_current_user_from_cookie(request, db)
+        if not user or user.role != "teacher":
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        group = db.query(Group).filter(Group.id == group_id).first()
+        if not group or group.teacher_id != user.id:
+            raise HTTPException(status_code=404, detail="Group not found")
+        
+        # Безопасный парсинг даты
+        try:
+            if 'T' in date:
+                parsed_date = datetime.fromisoformat(date.replace('Z', '+00:00'))
+            else:
+                # Пробуем разные форматы
+                try:
+                    parsed_date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
+                except:
+                    try:
+                        parsed_date = datetime.strptime(date, '%Y-%m-%d %H:%M')
+                    except:
+                        parsed_date = datetime.strptime(date, '%Y-%m-%d')
+        except Exception as e:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error_message": f"Неверный формат даты. Используйте формат: ГГГГ-ММ-ДД ЧЧ:ММ"
+            }, status_code=400)
+        
+        attendance = AttendanceRecord(
+            group_id=group_id,
+            student_id=student_id,
+            date=parsed_date,
+            present=present,
+            notes=notes
+        )
+        db.add(attendance)
+        db.commit()
+        
+        return RedirectResponse(url=f"/teacher/group/{group_id}", status_code=303)
+    except HTTPException:
+        raise
+    except Exception as e:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": f"Ошибка при сохранении посещаемости: {str(e)}"
+        }, status_code=500)
 
 if __name__ == "__main__":
     import uvicorn

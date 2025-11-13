@@ -168,11 +168,3 @@ export DATABASE_URL="postgresql://user:password@localhost/dbname"
 - Система ролей для разграничения доступа
 - Модерация контента (новости)
 
-## Лицензия
-
-Этот проект создан в образовательных целях.
-
-## Автор
-
-MAX UNIVER Team
-
